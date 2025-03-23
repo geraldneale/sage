@@ -47,15 +47,31 @@ impl NftUriQueue {
                 (item, result)
             });
         }
+        // Track which hash types we've already found matches for
+        let mut matched_hashes = std::collections::HashSet::new();
 
         while let Some((item, result)) = futures.next().await {
+            // Skip if we already found a match for this hash type
+            if matched_hashes.contains(&item.hash) {
+                continue;
+            }
             let mut tx = self.db.tx().await?;
 
             let hash_matches = match result {
                 Ok(Ok(data)) => {
                     let hash_matches = data.hash == item.hash;
 
-                    if !hash_matches {
+                    // if !hash_matches {
+                    //     warn!(
+                    //         "Hash mismatch for URI {} (expected {} but found {})",
+                    //         item.uri, item.hash, data.hash
+                    //     );
+                    // }
+                    if hash_matches {
+                        // If we found a match, add it to our tracking set
+                        // Use the hash directly without clone since it implements Copy
+                        matched_hashes.insert(item.hash);
+                    } else {
                         warn!(
                             "Hash mismatch for URI {} (expected {} but found {})",
                             item.uri, item.hash, data.hash
