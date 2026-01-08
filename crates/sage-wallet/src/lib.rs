@@ -1,3 +1,4 @@
+mod blink;
 mod child_kind;
 mod coin_kind;
 mod database;
@@ -10,6 +11,7 @@ mod utils;
 mod wallet;
 mod wallet_peer;
 
+pub use blink::*;
 pub use child_kind::*;
 pub use coin_kind::*;
 pub use database::*;

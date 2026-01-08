@@ -28,3 +28,5 @@ target
 .env
 /test.sqlite*
 
+crates/sage-database/.sqlx/
+crates/sage-database/test.db
