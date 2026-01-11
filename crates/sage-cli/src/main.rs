@@ -1,6 +1,8 @@
+mod blink;
 mod rpc;
 
 use anyhow::Result;
+use blink::BlinkCommand;
 use clap::Parser;
 use rpc::RpcCommand;
 use rustls::crypto::aws_lc_rs::default_provider;
@@ -16,6 +18,10 @@ enum Command {
     Rpc {
         #[clap(subcommand)]
         command: RpcCommand,
+    },
+    Blink {
+        #[clap(subcommand)]
+        command: BlinkCommand,
     },
 }
 
@@ -33,6 +39,7 @@ async fn main() -> Result<()> {
 
     match args.command {
         Command::Rpc { command } => command.handle(path).await?,
+        Command::Blink { command } => command.handle().await?,
     }
 
     Ok(())

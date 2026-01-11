@@ -31,3 +31,6 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 rustls = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
+chia = { workspace = true }
+clvmr = { workspace = true }
+sage-wallet = { workspace = true }
