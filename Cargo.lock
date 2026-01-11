@@ -5875,7 +5875,9 @@ name = "sage-cli"
 version = "0.12.7"
 dependencies = [
  "anyhow",
+ "chia",
  "clap",
+ "clvmr",
  "dirs 5.0.1",
  "rustls",
  "sage",
@@ -5883,6 +5885,7 @@ dependencies = [
  "sage-api-macro",
  "sage-client",
  "sage-rpc",
+ "sage-wallet",
  "serde",
  "serde_json",
  "tokio",
