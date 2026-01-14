@@ -1,12 +1,12 @@
-//! Blink Mojo payment channel implementation for Sage wallet
+//! Blink Mojo payment privacy protocol for Sage wallet
 //! 
-//! This module implements the Blink Mojo protocol, enabling fast
-//! off-chain payments through state channels on the Chia blockchain.
+//! This module implements the Blink Mojo protocol, enabling privacy-enhanced
+//! transactions by hijacking faucet coin lineage.
 
 mod puzzles;
-mod channel;
+mod mix;
 mod settlement;
 
 pub use puzzles::*;
-pub use channel::*;
+pub use mix::*;
 pub use settlement::*;
