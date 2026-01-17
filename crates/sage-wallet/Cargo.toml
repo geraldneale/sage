@@ -35,6 +35,8 @@ reqwest = { workspace = true, default-features = false, features = ["http2", "ru
 indexmap = { workspace = true }
 rand = { workspace = true }
 hex = { workspace = true }
+anyhow = { workspace = true }
+hex-literal = { workspace = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }
