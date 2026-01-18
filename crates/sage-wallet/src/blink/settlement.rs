@@ -2,13 +2,22 @@
 
 use crate::blink::{BlinkMix, BlinkPuzzles};
 use chia::protocol::{Coin, CoinSpend, SpendBundle};
-use chia::bls::{sign, aggregate, SecretKey, Signature};
+use chia::bls::{sign, aggregate, SecretKey, Signature, PublicKey};
 use clvmr::{Allocator, NodePtr};
 use clvmr::serde::node_to_bytes;
 use anyhow::Result;
+use chia::clvm_utils::CurriedProgram;
+use chia::clvm_traits::ToClvm;
 
 const GENESIS_CHALLENGE_TESTNET10: [u8; 32] = hex_literal::hex!("ae83525ba8d1dd3f09b277de18ca3e43fc0af20d20c4b3e92ef2a48bd291ccb2");
 
+// Curry argument types
+type FaucetArgs = ((PublicKey, Vec<u8>), (u64, [u8; 32]));
+type NeedsPrivacyArgs = (PublicKey, Vec<u8>);
+type DecoyArgs = ((PublicKey, Vec<u8>), (u64, [u8; 32]));
+type DecoyValueArgs = (PublicKey, Vec<u8>);
+
+#[derive(Debug)]
 pub struct BlinkSettlement {
     mix: BlinkMix,
     puzzles: BlinkPuzzles,
@@ -83,13 +92,34 @@ impl BlinkSettlement {
         sign(sk, &sig_data)
     }
     
-    fn curry_puzzle(&self, allocator: &mut Allocator, puzzle: &[u8], _args: Vec<NodePtr>) -> Result<NodePtr> {
-        // TODO: Implement currying
-        Ok(BlinkPuzzles::deserialize_puzzle(allocator, puzzle)?)
+    fn curry_puzzle<A: ToClvm<Allocator>>(
+        &self,
+        allocator: &mut Allocator,
+        puzzle: &[u8],
+        args: A,
+    ) -> Result<NodePtr> {
+        // Deserialize base puzzle
+        let puzzle_ptr = BlinkPuzzles::deserialize_puzzle(allocator, puzzle)?;
+        
+        // Create curried program
+        let curried = CurriedProgram {
+            program: puzzle_ptr,
+            args,
+        };
+        
+        // Serialize to NodePtr
+        curried.to_clvm(allocator).map_err(|e| anyhow::anyhow!("Curry error: {}", e))
     }
     
     fn create_faucet_spend(&self, allocator: &mut Allocator) -> Result<CoinSpend> {
-        let puzzle_reveal = self.curry_puzzle(allocator, &self.puzzles.faucet, vec![])?;
+        // Curry: (pk, msg, amount, anon_wallet_hash)
+        let faucet_pk = self.faucet_sk.public_key();
+        let args: FaucetArgs = (
+            (faucet_pk, self.faucet_msg.clone()),
+            (self.mix.needs_privacy_value, self.mix.needs_privacy_destination),
+        );
+        
+        let puzzle_reveal = self.curry_puzzle(allocator, &self.puzzles.faucet, args)?;
         let solution = allocator.nil();
         
         Ok(CoinSpend::new(
@@ -100,7 +130,14 @@ impl BlinkSettlement {
     }
     
     fn create_needs_privacy_spend(&self, allocator: &mut Allocator) -> Result<CoinSpend> {
-        let puzzle_reveal = self.curry_puzzle(allocator, &self.puzzles.needs_privacy, vec![])?;
+        // Curry: (pk, msg)
+        let needs_privacy_pk = self.needs_privacy_sk.public_key();
+        let args: NeedsPrivacyArgs = (
+            needs_privacy_pk,
+            self.needs_privacy_msg.clone(),
+        );
+        
+        let puzzle_reveal = self.curry_puzzle(allocator, &self.puzzles.needs_privacy, args)?;
         let solution = allocator.nil();
         
         Ok(CoinSpend::new(
@@ -111,7 +148,14 @@ impl BlinkSettlement {
     }
     
     fn create_decoy_spend(&self, allocator: &mut Allocator) -> Result<CoinSpend> {
-        let puzzle_reveal = self.curry_puzzle(allocator, &self.puzzles.decoy, vec![])?;
+        // Curry: (pk, msg, amount, known_wallet_hash)
+        let decoy_pk = self.decoy_sk.public_key();
+        let args: DecoyArgs = (
+            (decoy_pk, self.decoy_msg.clone()),
+            (self.mix.decoy_coin.amount, self.mix.needs_privacy_destination),
+        );
+        
+        let puzzle_reveal = self.curry_puzzle(allocator, &self.puzzles.decoy, args)?;
         let solution = allocator.nil();
         
         Ok(CoinSpend::new(
@@ -122,7 +166,14 @@ impl BlinkSettlement {
     }
     
     fn create_decoy_value_spend(&self, allocator: &mut Allocator) -> Result<CoinSpend> {
-        let puzzle_reveal = self.curry_puzzle(allocator, &self.puzzles.decoy_value, vec![])?;
+        // Curry: (pk, msg)
+        let decoy_value_pk = self.decoy_value_sk.public_key();
+        let args: DecoyValueArgs = (
+            decoy_value_pk,
+            self.decoy_value_msg.clone(),
+        );
+        
+        let puzzle_reveal = self.curry_puzzle(allocator, &self.puzzles.decoy_value, args)?;
         let solution = allocator.nil();
         
         Ok(CoinSpend::new(
