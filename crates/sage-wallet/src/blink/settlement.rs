@@ -6,16 +6,12 @@ use chia::bls::{sign, aggregate, SecretKey, Signature, PublicKey};
 use clvmr::{Allocator, NodePtr};
 use clvmr::serde::node_to_bytes;
 use anyhow::Result;
+
+const GENESIS_CHALLENGE_TESTNET10: [u8; 32] = hex_literal::hex!("ae83525ba8d1dd3f09b277de18ca3e43fc0af20d20c4b3e92ef2a48bd291ccb2");
 use chia::clvm_utils::CurriedProgram;
 use chia::clvm_traits::ToClvm;
 
-const GENESIS_CHALLENGE_TESTNET10: [u8; 32] = hex_literal::hex!("ae83525ba8d1dd3f09b277de18ca3e43fc0af20d20c4b3e92ef2a48bd291ccb2");
-
 // Curry argument types
-type FaucetArgs = ((PublicKey, Vec<u8>), (u64, [u8; 32]));
-type NeedsPrivacyArgs = (PublicKey, Vec<u8>);
-type DecoyArgs = ((PublicKey, Vec<u8>), (u64, [u8; 32]));
-type DecoyValueArgs = (PublicKey, Vec<u8>);
 
 #[derive(Debug)]
 pub struct BlinkSettlement {
@@ -34,6 +30,7 @@ pub struct BlinkSettlement {
 }
 
 impl BlinkSettlement {
+    /// Create a new BlinkSettlement
     pub fn new(
         mix: BlinkMix,
         faucet_sk: SecretKey,
@@ -135,7 +132,6 @@ impl BlinkSettlement {
         amount: u64,
         puzzle_hash: [u8; 32],
     ) -> Result<NodePtr> {
-        use chia::clvm_traits::ToClvm;
         
         let one = allocator.one();
         let four = allocator.new_small_number(4)?; // cons
@@ -182,8 +178,6 @@ impl BlinkSettlement {
         puzzle: &[u8],
         args: NodePtr,
     ) -> Result<NodePtr> {
-        use chia::clvm_utils::CurriedProgram;
-        use chia::clvm_traits::ToClvm;
         
         let puzzle_ptr = BlinkPuzzles::deserialize_puzzle(allocator, puzzle)?;
         
