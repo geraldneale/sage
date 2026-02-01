@@ -5,8 +5,8 @@ use chia::protocol::Coin;
 #[derive(Debug, Clone)]
 pub struct BlinkMix {
     // The faucet coin whose parent_id we hijack
-    pub faucet_coin: Coin,
-    pub faucet_parent_id: [u8; 32],
+    pub source_coin: Coin,
+    pub source_parent_id: [u8; 32],
     
     // Real coin needing privacy
     pub needs_privacy_coin: Coin,

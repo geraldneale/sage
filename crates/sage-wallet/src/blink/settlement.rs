@@ -18,12 +18,12 @@ pub struct BlinkSettlement {
     mix: BlinkMix,
     puzzles: BlinkPuzzles,
     
-    faucet_sk: SecretKey,
+    source_sk: SecretKey,
     needs_privacy_sk: SecretKey,
     decoy_sk: SecretKey,
     decoy_value_sk: SecretKey,
     
-    faucet_msg: Vec<u8>,
+    source_msg: Vec<u8>,
     needs_privacy_msg: Vec<u8>,
     decoy_msg: Vec<u8>,
     decoy_value_msg: Vec<u8>,
@@ -33,8 +33,8 @@ impl BlinkSettlement {
     /// Create a new BlinkSettlement
     pub fn new(
         mix: BlinkMix,
-        faucet_sk: SecretKey,
-        faucet_msg: Vec<u8>,
+        source_sk: SecretKey,
+        source_msg: Vec<u8>,
         needs_privacy_sk: SecretKey,
         needs_privacy_msg: Vec<u8>,
         decoy_sk: SecretKey,
@@ -48,11 +48,11 @@ impl BlinkSettlement {
         Ok(Self {
             mix,
             puzzles,
-            faucet_sk,
+            source_sk,
             needs_privacy_sk,
             decoy_sk,
             decoy_value_sk,
-            faucet_msg,
+            source_msg,
             needs_privacy_msg,
             decoy_msg,
             decoy_value_msg,
@@ -62,12 +62,12 @@ impl BlinkSettlement {
     pub fn build_spend_bundle(&self) -> Result<SpendBundle> {
         let mut allocator = Allocator::new();
         
-        let faucet_spend = self.create_faucet_spend(&mut allocator)?;
+        let faucet_spend = self.create_source_spend(&mut allocator)?;
         let needs_privacy_spend = self.create_needs_privacy_spend(&mut allocator)?;
         let decoy_spend = self.create_decoy_spend(&mut allocator)?;
         let decoy_value_spend = self.create_decoy_value_spend(&mut allocator)?;
         
-        let sig1 = self.sign_coin(&self.faucet_sk, &self.faucet_msg, &self.mix.faucet_coin);
+        let sig1 = self.sign_coin(&self.source_sk, &self.source_msg, &self.mix.source_coin);
         let sig2 = self.sign_coin(&self.needs_privacy_sk, &self.needs_privacy_msg, &self.mix.needs_privacy_coin);
         let sig3 = self.sign_coin(&self.decoy_sk, &self.decoy_msg, &self.mix.decoy_coin);
         let sig4 = self.sign_coin(&self.decoy_value_sk, &self.decoy_value_msg, &self.mix.decoy_value_coin);
@@ -189,23 +189,23 @@ impl BlinkSettlement {
         curried.to_clvm(allocator).map_err(|e| anyhow::anyhow!("Curry error: {}", e))
     }
     
-    fn create_faucet_spend(&self, allocator: &mut Allocator) -> Result<CoinSpend> {
+    fn create_source_spend(&self, allocator: &mut Allocator) -> Result<CoinSpend> {
         // Curry: (pk, msg, amount, anon_wallet_hash)
-        let faucet_pk = self.faucet_sk.public_key();
+        let faucet_pk = self.source_sk.public_key();
         
         let args = Self::build_curry_args_4(
             allocator,
             faucet_pk,
-            self.faucet_msg.clone(),
+            self.source_msg.clone(),
             self.mix.needs_privacy_value,
             self.mix.needs_privacy_destination,
         )?;
         
-        let puzzle_reveal = self.curry_puzzle(allocator, &self.puzzles.faucet, args)?;
+        let puzzle_reveal = self.curry_puzzle(allocator, &self.puzzles.source, args)?;
         let solution = allocator.nil();
         
         Ok(CoinSpend::new(
-            self.mix.faucet_coin.clone(),
+            self.mix.source_coin.clone(),
             node_to_bytes(allocator, puzzle_reveal)?.into(),
             node_to_bytes(allocator, solution)?.into(),
         ))

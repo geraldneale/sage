@@ -10,3 +10,6 @@ mod settlement;
 pub use puzzles::*;
 pub use mix::*;
 pub use settlement::*;
+
+#[cfg(test)]
+mod tests;

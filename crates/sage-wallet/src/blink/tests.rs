@@ -18,13 +18,13 @@ const FAKE_ANON_DEST: [u8; 32] = hex!("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 const FAKE_KNOWN_DEST: [u8; 32] = hex!("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB");
 
 // Expected puzzle hashes
-const FAUCET_HASH: [u8; 32] = hex!("b239af1c6c555b0863e366a2e5e5214250e718a08f8bab059ae4ea27a3f252d7");
+const SOURCE_HASH: [u8; 32] = hex!("b239af1c6c555b0863e366a2e5e5214250e718a08f8bab059ae4ea27a3f252d7");
 const NEEDS_PRIVACY_HASH: [u8; 32] = hex!("a42f267a43c59af0fed2ad215ec37b9fded4ba6764ba4d0d2b51a3c2d0c10853");
 const DECOY_HASH: [u8; 32] = hex!("320b2c41b44be952bf3fe65425cafcb262db6e6a2b4ca3b47d6e023f88bbdfea");
 const DECOY_VALUE_HASH: [u8; 32] = hex!("a42f267a43c59af0fed2ad215ec37b9fded4ba6764ba4d0d2b51a3c2d0c10853");
 
 #[test]
-fn test_faucet_curry() {
+fn test_source_curry() {
     use chia::clvm_utils::CurriedProgram;
     use chia::clvm_traits::ToClvm;
     
@@ -42,7 +42,7 @@ fn test_faucet_curry() {
         FAKE_ANON_DEST,
     ).expect("build args");
     
-    let puzzle_ptr = BlinkPuzzles::deserialize_puzzle(&mut allocator, &puzzles.faucet).expect("deserialize");
+    let puzzle_ptr = BlinkPuzzles::deserialize_puzzle(&mut allocator, &puzzles.source).expect("deserialize");
     
     let curried = CurriedProgram {
         program: puzzle_ptr,
@@ -52,7 +52,7 @@ fn test_faucet_curry() {
     let curried_ptr = curried.to_clvm(&mut allocator).expect("curry");
     let puzzle_hash = tree_hash(&allocator, curried_ptr);
     
-    assert_eq!(puzzle_hash.as_ref(), &FAUCET_HASH, "Faucet puzzle hash mismatch");
+    assert_eq!(puzzle_hash.as_ref(), &SOURCE_HASH, "Faucet puzzle hash mismatch");
 }
 
 #[test]
@@ -143,13 +143,13 @@ fn test_build_spend_bundle() {
     use chia::bls::SecretKey;
     
     // Create 4 disposable keys
-    let faucet_sk = SecretKey::from_bytes(&[1; 32]).unwrap();
+    let source_sk = SecretKey::from_bytes(&[1; 32]).unwrap();
     let needs_privacy_sk = SecretKey::from_bytes(&[2; 32]).unwrap();
     let decoy_sk = SecretKey::from_bytes(&[3; 32]).unwrap();
     let decoy_value_sk = SecretKey::from_bytes(&[4; 32]).unwrap();
     
     // Create mock coins with fake IDs
-    let faucet_coin = Coin::new(
+    let source_coin = Coin::new(
         [0xAA; 32].into(),  // parent
         [0xBB; 32].into(),  // puzzle_hash
         1000,               // amount
@@ -175,8 +175,8 @@ fn test_build_spend_bundle() {
     
     // Build the mix
     let mix = BlinkMix {
-        faucet_coin,
-        faucet_parent_id: [0xAA; 32],
+        source_coin,
+        source_parent_id: [0xAA; 32],
         needs_privacy_coin,
         needs_privacy_value: 500000000000,
         needs_privacy_destination: FAKE_ANON_DEST,  // Using test constant
@@ -195,7 +195,7 @@ fn test_build_spend_bundle() {
     // Create settlement
     let settlement = BlinkSettlement::new(
         mix,
-        faucet_sk,
+        source_sk,
         b"faucet_msg".to_vec(),
         needs_privacy_sk,
         b"needs_privacy_msg".to_vec(),

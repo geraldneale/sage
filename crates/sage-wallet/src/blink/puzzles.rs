@@ -8,7 +8,7 @@ use clvmr::serde::node_from_bytes;
 /// Compiled puzzle hex strings
 const NEEDS_PRIVACY_HEX: &str = include_str!("puzzles/needs_privacy.clvm.hex");
 const DECOY_VALUE_HEX: &str = include_str!("puzzles/decoy_value.clvm.hex");
-const FAUCET_HEX: &str = include_str!("puzzles/faucet.clvm.hex");
+const SOURCE_HEX: &str = include_str!("puzzles/source.clvm.hex");
 const DECOY_HEX: &str = include_str!("puzzles/decoy.clvm.hex");
 
 /// Container for all Blink Mojo puzzles
@@ -16,7 +16,7 @@ const DECOY_HEX: &str = include_str!("puzzles/decoy.clvm.hex");
 pub struct BlinkPuzzles {
     pub needs_privacy: Vec<u8>,
     pub decoy_value: Vec<u8>,
-    pub faucet: Vec<u8>,
+    pub source: Vec<u8>,
     pub decoy: Vec<u8>,
 }
 
@@ -26,7 +26,7 @@ impl BlinkPuzzles {
         Ok(Self {
             needs_privacy: hex::decode(NEEDS_PRIVACY_HEX.trim())?,
             decoy_value: hex::decode(DECOY_VALUE_HEX.trim())?,
-            faucet: hex::decode(FAUCET_HEX.trim())?,
+            source: hex::decode(SOURCE_HEX.trim())?,
             decoy: hex::decode(DECOY_HEX.trim())?,
         })
     }
@@ -49,7 +49,7 @@ mod tests {
         let puzzles = BlinkPuzzles::load().expect("Failed to load puzzles");
         assert!(!puzzles.needs_privacy.is_empty());
         assert!(!puzzles.decoy_value.is_empty());
-        assert!(!puzzles.faucet.is_empty());
+        assert!(!puzzles.source.is_empty());
         assert!(!puzzles.decoy.is_empty());
     }
 }
