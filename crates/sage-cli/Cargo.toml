@@ -36,3 +36,4 @@ clvmr = { workspace = true }
 sage-wallet = { workspace = true }
 hex.workspace = true
 chia-traits.workspace = true
+rand = { workspace = true, features = ["std"] }

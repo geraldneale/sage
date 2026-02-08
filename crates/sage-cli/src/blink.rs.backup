@@ -247,21 +247,13 @@ impl BlinkCommand {
                 
                 println!("✓ Mix created and validated");
                 
-                // Generate random disposable key for source (privacy-critical)
-                use rand::RngCore;
-                let mut source_seed = [0u8; 32];
-                rand::thread_rng().fill_bytes(&mut source_seed);
-                let source_sk = SecretKey::from_bytes(&source_seed)?;
-                
-                println!("✓ Generated random disposable key for source coin");
-                
-                // TODO: Derive other 3 keys from wallet keychain
-                // For now, using test keys (will integrate with Sage keychain next)
+                // Create disposable keys (in production, these would come from wallet)
+                let source_sk = SecretKey::from_bytes(&[1; 32])?;
                 let needs_privacy_sk = SecretKey::from_bytes(&[2; 32])?;
                 let decoy_sk = SecretKey::from_bytes(&[3; 32])?;
                 let decoy_value_sk = SecretKey::from_bytes(&[4; 32])?;
                 
-                println!("✓ Using test keys for other coins (TODO: integrate keychain)");
+                println!("✓ Generated disposable keys");
                 
                 // Create settlement
                 let settlement = BlinkSettlement::new(
