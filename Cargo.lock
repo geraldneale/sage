@@ -5876,9 +5876,12 @@ version = "0.12.7"
 dependencies = [
  "anyhow",
  "chia",
+ "chia-traits 0.26.0",
  "clap",
  "clvmr",
  "dirs 5.0.1",
+ "hex",
+ "rand 0.8.5",
  "rustls",
  "sage",
  "sage-api",
