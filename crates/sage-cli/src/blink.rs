@@ -69,6 +69,10 @@ pub enum BlinkCommand {
         /// Decoy value destination (puzzle hash, hex)
         #[clap(long)]
         decoy_value_destination: String,
+        
+        /// Wallet secret key (hex, 64 chars) - used for all 3 recoverable coins
+        #[clap(long)]
+        wallet_sk: Option<String>,
     },
 }
 
@@ -184,6 +188,7 @@ impl BlinkCommand {
                 decoy_coin_id,
                 decoy_value_amount,
                 decoy_value_destination,
+                wallet_sk,
             } => {
                 println!("⚡ Creating Blink Mojo spend bundle...\n");
                 
@@ -255,12 +260,30 @@ impl BlinkCommand {
                 
                 println!("✓ Generated random disposable key for source coin");
                 
-                // TODO: Derive other 3 keys from wallet keychain
-                // For now, using test keys (will integrate with Sage keychain next)
-                let needs_privacy_sk = SecretKey::from_bytes(&[2; 32])?;
-                let decoy_sk = SecretKey::from_bytes(&[3; 32])?;
-                let decoy_value_sk = SecretKey::from_bytes(&[4; 32])?;
+                // Parse wallet secret key or use test keys
+                let wallet_sk = if let Some(sk_hex) = wallet_sk {
+                    let sk_hex = sk_hex.trim_start_matches("0x");
+                    let sk_bytes = hex::decode(sk_hex)
+                        .map_err(|e| anyhow::anyhow!("Invalid wallet-sk hex: {}", e))?;
+                    
+                    if sk_bytes.len() != 32 {
+                        return Err(anyhow::anyhow!("wallet-sk must be 32 bytes (64 hex chars)"));
+                    }
+                    
+                    let mut sk_array = [0u8; 32];
+                    sk_array.copy_from_slice(&sk_bytes);
+                    SecretKey::from_bytes(&sk_array)?
+                } else {
+                    println!("⚠️  No --wallet-sk provided, using test keys (NOT SECURE)");
+                    SecretKey::from_bytes(&[1; 32])?
+                };
                 
+                // Use same wallet key for all 3 recoverable coins
+                let needs_privacy_sk = wallet_sk.clone();
+                let decoy_sk = wallet_sk.clone();
+                let decoy_value_sk = wallet_sk;
+                
+                println!("✓ Wallet keys configured for recoverable coins");
                 println!("✓ Using test keys for other coins (TODO: integrate keychain)");
                 
                 // Create settlement
