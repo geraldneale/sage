@@ -5,6 +5,21 @@ use sage_wallet::{BlinkPuzzles, BlinkMix, BlinkSettlement};
 use chia::protocol::Coin;
 use chia::bls::SecretKey;
 use chia_traits::Streamable;
+
+// Parse 32-byte hex string into Bytes32
+fn parse_bytes32(hex: &str) -> Result<[u8; 32]> {
+    let hex = hex.trim_start_matches("0x");
+    let bytes = hex::decode(hex)
+        .map_err(|e| anyhow::anyhow!("Invalid hex string: {}", e))?;
+    
+    if bytes.len() != 32 {
+        return Err(anyhow::anyhow!("Expected 32 bytes (64 hex chars), got {}", bytes.len()));
+    }
+    
+    let mut result = [0u8; 32];
+    result.copy_from_slice(&bytes);
+    Ok(result)
+}
 #[derive(Debug, Parser)]
 pub enum BlinkCommand {
     /// Load and verify all Blink Mojo puzzles
@@ -192,10 +207,19 @@ impl BlinkCommand {
             } => {
                 println!("⚡ Creating Blink Mojo spend bundle...\n");
                 
-                // TODO: Parse hex coin IDs and destinations properly
-                // For now, using dummy data
+                // Parse coin IDs
+                println!("📝 Parsing coin IDs...");
+                let _source_coin_id = parse_bytes32(&source_coin_id)?;
+                let _needs_privacy_coin_id = parse_bytes32(&needs_privacy_coin_id)?;
+                let _decoy_coin_id = parse_bytes32(&decoy_coin_id)?;
                 
-                println!("📝 Creating mock coins for demonstration...");
+                // Parse destination puzzle hashes
+                let needs_privacy_dest = parse_bytes32(&needs_privacy_destination)?;
+                let decoy_value_dest = parse_bytes32(&decoy_value_destination)?;
+                
+                // TODO: Query actual coins from wallet database using coin IDs
+                // For now, using mock coins with correct destinations
+                println!("⚠️  Using mock coins (TODO: query from wallet DB)");
                 
                 let source_coin = Coin {
                     parent_coin_info: [0xAA; 32].into(),
@@ -220,17 +244,6 @@ impl BlinkCommand {
                     puzzle_hash: [0x22; 32].into(),
                     amount: decoy_value_amount,
                 };
-                
-                // Parse destination addresses
-                let needs_privacy_dest = hex::decode(needs_privacy_destination.trim_start_matches("0x"))?;
-                let decoy_value_dest = hex::decode(decoy_value_destination.trim_start_matches("0x"))?;
-                
-                if needs_privacy_dest.len() != 32 {
-                    return Err(anyhow::anyhow!("needs_privacy_destination must be 32 bytes"));
-                }
-                if decoy_value_dest.len() != 32 {
-                    return Err(anyhow::anyhow!("decoy_value_destination must be 32 bytes"));
-                }
                 
                 let mut needs_privacy_dest_array = [0u8; 32];
                 needs_privacy_dest_array.copy_from_slice(&needs_privacy_dest);
