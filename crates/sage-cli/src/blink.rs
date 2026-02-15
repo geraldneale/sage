@@ -4,7 +4,6 @@ use clvmr::Allocator;
 use sage_wallet::{BlinkPuzzles, BlinkMix, BlinkSettlement};
 use chia::protocol::Coin;
 use chia::bls::SecretKey;
-use chia_traits::Streamable;
 
 // Parse 32-byte hex string into Bytes32
 fn parse_bytes32(hex: &str) -> Result<[u8; 32]> {
@@ -118,7 +117,7 @@ impl BlinkCommand {
                 };
                 
                 let mut allocator = Allocator::new();
-                let puzzle_ptr = BlinkPuzzles::deserialize_puzzle(&mut allocator, puzzle_bytes)?;
+                let _puzzle_ptr = BlinkPuzzles::deserialize_puzzle(&mut allocator, puzzle_bytes)?;
                 
                 println!("✓ Puzzle deserialized successfully");
                 println!("✓ Puzzle size: {} bytes", puzzle_bytes.len());
@@ -128,10 +127,10 @@ impl BlinkCommand {
             }
             
             Self::CreateMix {
-                source_coin_id,
-                needs_privacy_coin_id,
+                source_coin_id: _,
+                needs_privacy_coin_id: _,
                 needs_privacy_value,
-                decoy_coin_id,
+                decoy_coin_id: _,
                 decoy_value_amount,
             } => {
                 println!("🎭 Creating Blink mixing transaction...\n");
@@ -209,9 +208,9 @@ impl BlinkCommand {
                 
                 // Parse coin IDs
                 println!("📝 Parsing coin IDs...");
-                let _source_coin_id = parse_bytes32(&source_coin_id)?;
-                let _needs_privacy_coin_id = parse_bytes32(&needs_privacy_coin_id)?;
-                let _decoy_coin_id = parse_bytes32(&decoy_coin_id)?;
+                let _source_coin_id_parsed = parse_bytes32(&source_coin_id)?;
+                let _needs_privacy_coin_id_parsed = parse_bytes32(&needs_privacy_coin_id)?;
+                let _decoy_coin_id_parsed = parse_bytes32(&decoy_coin_id)?;
                 
                 // Parse destination puzzle hashes
                 let needs_privacy_dest = parse_bytes32(&needs_privacy_destination)?;
