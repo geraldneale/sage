@@ -4,6 +4,13 @@ use clvmr::Allocator;
 use sage_wallet::{BlinkPuzzles, BlinkMix, BlinkSettlement};
 use chia::protocol::Coin;
 use chia::bls::SecretKey;
+use rand::RngCore;
+use rand::RngCore;
+use bip39::Mnemonic;
+
+
+// Imagine Wallet - publicly known mnemonic for anyone-can-broadcast Blink bundles
+const IMAGINE_WALLET_MNEMONIC: &str = "duty love burger voyage snap case decrease ride true welcome bunker bench adult lizard lunar rich soda crush popular reflect ghost drink heart initial";
 
 // Parse 32-byte hex string into Bytes32
 fn parse_bytes32(hex: &str) -> Result<[u8; 32]> {
@@ -87,6 +94,10 @@ pub enum BlinkCommand {
         /// Wallet secret key (hex, 64 chars) - used for all 3 recoverable coins
         #[clap(long)]
         wallet_sk: Option<String>,
+
+        /// Use Imagine Wallet public key for anyone-can-broadcast bundles
+        #[clap(long)]
+        use_imagine_wallet: bool,
     },
 }
 
@@ -199,6 +210,7 @@ impl BlinkCommand {
                 needs_privacy_coin_id,
                 needs_privacy_value,
                 needs_privacy_destination,
+                use_imagine_wallet,
                 decoy_coin_id,
                 decoy_value_amount,
                 decoy_value_destination,
@@ -265,15 +277,27 @@ impl BlinkCommand {
                 println!("✓ Mix created and validated");
                 
                 // Generate random disposable key for source (privacy-critical)
-                use rand::RngCore;
-                let mut source_seed = [0u8; 32];
-                rand::thread_rng().fill_bytes(&mut source_seed);
-                let source_sk = SecretKey::from_bytes(&source_seed)?;
+                // Generate random disposable key for source coin (with retry for valid key)
+                let source_sk = loop {
+                    let mut source_seed = [0u8; 32];
+                    rand::thread_rng().fill_bytes(&mut source_seed);
+                    if let Ok(sk) = SecretKey::from_bytes(&source_seed) {
+                        break sk;
+                    }
+                };
                 
                 println!("✓ Generated random disposable key for source coin");
                 
                 // Parse wallet secret key or use test keys
-                let wallet_sk = if let Some(sk_hex) = wallet_sk {
+                let wallet_sk = if use_imagine_wallet {
+                    println!("🌍 Using Imagine Wallet (anyone can broadcast)");
+                    let mnemonic = IMAGINE_WALLET_MNEMONIC.parse::<Mnemonic>()
+                        .map_err(|e| anyhow::anyhow!("Invalid Imagine Wallet mnemonic: {}", e))?;
+                    let seed = mnemonic.to_seed("");
+                    let mut seed_array = [0u8; 32];
+                    seed_array.copy_from_slice(&seed[..32]);
+                    SecretKey::from_bytes(&seed_array)?
+                } else if let Some(sk_hex) = wallet_sk {
                     let sk_hex = sk_hex.trim_start_matches("0x");
                     let sk_bytes = hex::decode(sk_hex)
                         .map_err(|e| anyhow::anyhow!("Invalid wallet-sk hex: {}", e))?;
