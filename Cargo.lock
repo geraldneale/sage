@@ -5875,6 +5875,7 @@ name = "sage-cli"
 version = "0.12.7"
 dependencies = [
  "anyhow",
+ "bip39",
  "chia",
  "chia-traits 0.26.0",
  "clap",

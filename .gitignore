@@ -30,3 +30,5 @@ target
 
 crates/sage-database/.sqlx/
 crates/sage-database/test.db
+*.bak
+*SUMMARY*.md
