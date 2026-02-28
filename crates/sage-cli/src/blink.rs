@@ -5,7 +5,6 @@ use sage_wallet::{BlinkPuzzles, BlinkMix, BlinkSettlement};
 use chia::protocol::Coin;
 use chia::bls::SecretKey;
 use rand::RngCore;
-use rand::RngCore;
 use bip39::Mnemonic;
 
 
@@ -61,6 +60,30 @@ pub enum BlinkCommand {
         decoy_value_amount: u64,
     },
     
+    
+    /// Prepare coins for Blink mixing (Transaction 1)
+    Prepare {
+        /// Destination address for privacy output (xch address or puzzle hash hex)
+        #[clap(long)]
+        destination: String,
+        
+        /// Amount to mix (mojos) - used for needs_privacy and decoy_value coins
+        #[clap(long)]
+        amount: u64,
+        
+        /// Fee amount (mojos) - becomes decoy coin value
+        #[clap(long)]
+        fee: u64,
+        
+        /// Wallet ID to spend from
+        #[clap(long)]
+        wallet_id: Option<u32>,
+        
+        /// Output file for preparation data
+        #[clap(long, default_value = "blink_prep.json")]
+        output: String,
+    },
+
     /// Create complete spend bundle (settlement)
     Settle {
         /// Source coin ID (from faucet or offer)
@@ -205,6 +228,36 @@ impl BlinkCommand {
                 Ok(())
             }
             
+            
+            Self::Prepare {
+                destination,
+                amount,
+                fee,
+                wallet_id,
+                output,
+            } => {
+                println!("🔧 Preparing Blink coins (Transaction 1)...\n");
+                
+                // TODO: Implement coin creation from wallet
+                // For now, just show what would happen
+                
+                println!("📋 Preparation Plan:");
+                println!("  Destination: {}", destination);
+                println!("  Amount (needs_privacy + decoy_value): {} mojos", amount);
+                println!("  Fee (decoy coin): {} mojos", fee);
+                println!("  Wallet ID: {:?}", wallet_id);
+                println!("  Output file: {}", output);
+                
+                println!("\n⚠️  TODO: This will create 3 coins:");
+                println!("  1. needs_privacy coin: {} mojos → {}", amount, destination);
+                println!("  2. decoy coin: {} mojos → random", fee);
+                println!("  3. decoy_value coin: {} mojos → {}", amount, destination);
+                
+                println!("\n💡 Next: Use these coins in 'sage blink settle'");
+                
+                Ok(())
+            }
+
             Self::Settle {
                 source_coin_id,
                 needs_privacy_coin_id,
