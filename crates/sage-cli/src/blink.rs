@@ -5,6 +5,7 @@ use sage_wallet::{BlinkPuzzles, BlinkMix, BlinkSettlement};
 use chia::protocol::Coin;
 use chia::bls::SecretKey;
 use rand::RngCore;
+use serde::{Serialize, Deserialize};
 use bip39::Mnemonic;
 
 
@@ -25,6 +26,17 @@ fn parse_bytes32(hex: &str) -> Result<[u8; 32]> {
     result.copy_from_slice(&bytes);
     Ok(result)
 }
+// Data structure for preparation output
+#[derive(Debug, Serialize, Deserialize)]
+struct PrepareData {
+    destination: String,
+    amount: u64,
+    fee: u64,
+    wallet_id: Option<u32>,
+    // TODO: Add actual coin component data (parent_ids, puzzle_hashes, amounts)
+    timestamp: u64,
+}
+
 #[derive(Debug, Parser)]
 pub enum BlinkCommand {
     /// Load and verify all Blink Mojo puzzles
@@ -238,22 +250,35 @@ impl BlinkCommand {
             } => {
                 println!("🔧 Preparing Blink coins (Transaction 1)...\n");
                 
-                // TODO: Implement coin creation from wallet
-                // For now, just show what would happen
-                
                 println!("📋 Preparation Plan:");
                 println!("  Destination: {}", destination);
                 println!("  Amount (needs_privacy + decoy_value): {} mojos", amount);
                 println!("  Fee (decoy coin): {} mojos", fee);
                 println!("  Wallet ID: {:?}", wallet_id);
-                println!("  Output file: {}", output);
                 
                 println!("\n⚠️  TODO: This will create 3 coins:");
                 println!("  1. needs_privacy coin: {} mojos → {}", amount, destination);
                 println!("  2. decoy coin: {} mojos → random", fee);
                 println!("  3. decoy_value coin: {} mojos → {}", amount, destination);
                 
-                println!("\n💡 Next: Use these coins in 'sage blink settle'");
+                // Create preparation data
+                let prep_data = PrepareData {
+                    destination: destination.clone(),
+                    amount,
+                    fee,
+                    wallet_id,
+                    timestamp: std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap()
+                        .as_secs(),
+                };
+                
+                // Save to JSON file
+                let json = serde_json::to_string_pretty(&prep_data)?;
+                std::fs::write(&output, json)?;
+                
+                println!("\n✅ Preparation data saved to: {}", output);
+                println!("💡 Next: Use this with 'sage blink settle --prepare-file {}'", output);
                 
                 Ok(())
             }
