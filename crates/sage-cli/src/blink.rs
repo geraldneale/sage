@@ -98,33 +98,13 @@ pub enum BlinkCommand {
 
     /// Create complete spend bundle (settlement)
     Settle {
-        /// Source coin ID (from faucet or offer)
+        /// Faucet/source coin ID (hex, 64 chars)
         #[clap(long)]
-        source_coin_id: String,
+        faucet_coin_id: String,
         
-        /// Needs privacy coin ID
+        /// Preparation file from 'blink prepare' command
         #[clap(long)]
-        needs_privacy_coin_id: String,
-        
-        /// Needs privacy value (mojos)
-        #[clap(long)]
-        needs_privacy_value: u64,
-        
-        /// Needs privacy destination (puzzle hash, hex)
-        #[clap(long)]
-        needs_privacy_destination: String,
-        
-        /// Decoy coin ID
-        #[clap(long)]
-        decoy_coin_id: String,
-        
-        /// Decoy value amount (mojos)
-        #[clap(long)]
-        decoy_value_amount: u64,
-        
-        /// Decoy value destination (puzzle hash, hex)
-        #[clap(long)]
-        decoy_value_destination: String,
+        prepare_file: String,
         
         /// Wallet secret key (hex, 64 chars) - used for all 3 recoverable coins
         #[clap(long)]
@@ -133,7 +113,7 @@ pub enum BlinkCommand {
         /// Use Imagine Wallet public key for anyone-can-broadcast bundles
         #[clap(long)]
         use_imagine_wallet: bool,
-    },
+}
 }
 
 impl BlinkCommand {
@@ -240,7 +220,6 @@ impl BlinkCommand {
                 Ok(())
             }
             
-            
             Self::Prepare {
                 destination,
                 amount,
@@ -284,31 +263,26 @@ impl BlinkCommand {
             }
 
             Self::Settle {
-                source_coin_id,
-                needs_privacy_coin_id,
-                needs_privacy_value,
-                needs_privacy_destination,
-                use_imagine_wallet,
-                decoy_coin_id,
-                decoy_value_amount,
-                decoy_value_destination,
+                faucet_coin_id,
+                prepare_file,
                 wallet_sk,
+                use_imagine_wallet,
             } => {
                 println!("⚡ Creating Blink Mojo spend bundle...\n");
                 
-                // Parse coin IDs
-                println!("📝 Parsing coin IDs...");
-                let _source_coin_id_parsed = parse_bytes32(&source_coin_id)?;
-                let _needs_privacy_coin_id_parsed = parse_bytes32(&needs_privacy_coin_id)?;
-                let _decoy_coin_id_parsed = parse_bytes32(&decoy_coin_id)?;
+                // Read preparation data
+                println!("📖 Reading preparation file: {}", prepare_file);
+                let prep_json = std::fs::read_to_string(&prepare_file)?;
+                let prep_data: PrepareData = serde_json::from_str(&prep_json)?;
                 
-                // Parse destination puzzle hashes
-                let needs_privacy_dest = parse_bytes32(&needs_privacy_destination)?;
-                let decoy_value_dest = parse_bytes32(&decoy_value_destination)?;
+                println!("✓ Preparation data loaded");
                 
-                // TODO: Query actual coins from wallet database using coin IDs
-                // For now, using mock coins with correct destinations
-                println!("⚠️  Using mock coins (TODO: query from wallet DB)");
+                // Parse faucet coin ID and destinations
+                let _source_coin_id_parsed = parse_bytes32(&faucet_coin_id)?;
+                let needs_privacy_dest = parse_bytes32(&prep_data.destination)?;
+                let needs_privacy_value = prep_data.amount;
+                let decoy_value_amount = prep_data.amount;
+                let decoy_value_dest = needs_privacy_dest;
                 
                 let source_coin = Coin {
                     parent_coin_info: [0xAA; 32].into(),
